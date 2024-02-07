@@ -51,17 +51,17 @@ faasr_trigger <- function(faasr) {
       switch(next_server_type,
         # if OpenWhisk - use OpenWhisk API
         "OpenWhisk"={
-          faasr_trigger_ow(faasr)
+          faasr_trigger_ow(faasr, next_server)
         },
 				
        	# if AWS Lambda - use Lambda API
         "Lambda"={
-          faasr_trigger_ld(faasr)
+          faasr_trigger_ld(faasr, next_server)
         },
 
         # if GitHub Actions - use GH Actions
         "GitHubActions"={
-          faasr_trigger_gh(faasr)
+          faasr_trigger_gh(faasr, next_server)
     	  }
 
         #More to be developed
@@ -82,7 +82,7 @@ faasr_trigger <- function(faasr) {
 
 # Modules to trigger next functions on each FaaS platform
 
-faasr_trigger_ow <- function(faasr){
+faasr_trigger_ow <- function(faasr, next_server){
   # OpenWhisk API handling
   # Set the env values for the openwhisk action.
   endpoint <- faasr$ComputeServers[[next_server]]$Endpoint
@@ -129,7 +129,7 @@ faasr_trigger_ow <- function(faasr){
 }
 
 
-faasr_trigger_ld <- function(faasr){
+faasr_trigger_ld <- function(faasr, next_server){
   # AWS Lambda API handling
   # get next function server
   target_server <- faasr$ComputeServers[[next_server]]
@@ -175,7 +175,7 @@ faasr_trigger_ld <- function(faasr){
 }
 
 
-faasr_trigger_gh <- function(faasr){
+faasr_trigger_gh <- function(faasr, next_server){
   # GitHub Actions API handling
   # Set env values for GitHub Actions event
   pat <- faasr$ComputeServers[[next_server]]$Token
