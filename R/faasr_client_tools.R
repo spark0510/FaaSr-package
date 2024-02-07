@@ -53,7 +53,10 @@ faasr_register_workflow <- function(...){
   # register actions for openwhisk/github-actions/lambda by given json
   check <- faasr_register_workflow_openwhisk(faasr,cred,...)
   check <- faasr_register_workflow_github_actions(faasr,cred)
-  #check <- faasr_register_workflow_aws_lambda(faasr,cred)
+  check <- faasr_register_workflow_aws_lambda(faasr,cred)
+  #More to be developed
+  #check <- faasr_register_workflow_microsoft_azure()
+  #check <- faasr_register_workflow_google_cloud()
   
 }
 .faasr_user$operations$register_workflow <- faasr_register_workflow
@@ -136,6 +139,12 @@ faasr_collect_sys_env <- function(faasr, cred){
         }
       }
     }
+    # More to be developed
+    #} else if (type == "Microsoft Azure"){
+      
+    #} else if (type == "Google Cloud"){
+     
+    #}
   }
   
   # Check the DataStores.
@@ -251,6 +260,13 @@ faasr <- function(json_path=NULL, env_path=NULL){
               }
               svc$json$ComputeServers[[faas_js]]$API.key <- paste0(faas_js,"_API_KEY")
             }
+            #More to be developed
+            #"Mircrosoft Azure"={
+
+            #},
+            #"Google Cloud"={
+
+            #}
     )
   }
   # Check the Datastores
@@ -364,37 +380,24 @@ faasr_invoke_workflow <- function(FunctionInvoke=NULL, ...){
   switch(faas_type,
          # If first action is github actions, use github
          "GitHubActions"={
-            faasr_workflow_invoke_github(faasr, cred, faas_name, actionname)
+          faasr_workflow_invoke_github(faasr, cred, faas_name, actionname)
          },
          # If first action is aws-lambda, use lambda
          "Lambda"={
-           # json file with credentials will be created and after invocation, it will be removed.
-           faasr_w_cred <- faasr_replace_values(faasr, cred)
-           faasr_json <- jsonlite::toJSON(faasr_w_cred, auto_unbox=TRUE)
-           rd_nb <- sample(100000, size=1)
-           writeLines(faasr_json, paste0("payload_ld_",rd_nb,".json"))
-
-           # get lambda function timeout
-           check_lambda_config_command <- paste0("aws lambda get-function-configuration --function-name ", actionname)
-           check_lambda_config_result <- system(check_lambda_config_command, intern = TRUE)
-
-           status_code <- attr(check_lambda_config_result, "status")
-           if (!is.null(status_code) && status_code == 254){
-             lambda_func_time_out <- 120
-           } else {
-            json_string <- paste(check_lambda_config_result, collapse = "")
-            json_data <- jsonlite::fromJSON(json_string)
-            lambda_func_time_out <- json_data$Timeout
-          }
-          
-           command <- paste0("aws lambda invoke --function-name ",actionname," --cli-connect-timeout ", lambda_func_time_out ," --cli-binary-format raw-in-base64-out --invocation-type RequestResponse --payload file://",paste0("payload_ld_",rd_nb,".json")," lambda_outputfile.txt")
-           check <- system(command)
-           file.remove(paste0("payload_ld_",rd_nb,".json"))
+          #faasr_workflow_invoke_lambda(faasr, cred, faas_name, actionname)
          },
          # If first action is openwhisk, use ibmcloud
          "OpenWhisk"={
-           faasr_workflow_invoke_openwhisk(faasr, cred, faas_name, actionname, ...)
-         })
+          faasr_workflow_invoke_openwhisk(faasr, cred, faas_name, actionname, ...)
+         }
+         # More to be developed
+         #"Microsoft Azure"={
+          #faasr_workflow_invoke_azure()
+         #},
+         #"Google Cloud"={
+          #faasr_workflow_invoke_google()
+         #}
+        )
 }
 .faasr_user$operations$invoke_workflow <- faasr_invoke_workflow
 
@@ -430,6 +433,12 @@ faasr_set_workflow_timer <- function(cron, target=NULL, ...){
   } else if (type == "OpenWhisk"){
     faasr_set_workflow_timer_ow(faasr,cred,target,cron, ...)
   }
+  # More to be developed
+  #} else if (type == "Microsoft Azure"){
+    #faasr_set_workflow_timer_az()
+  #} else if (type == "Google Cloud"){
+    #faasr_set_workflow_timer_gc()
+  #}
 }
 .faasr_user$operations$set_workflow_timer <- faasr_set_workflow_timer
 
@@ -461,6 +470,12 @@ faasr_unset_workflow_timer <- function(target=NULL,...){
   } else if (type == "OpenWhisk"){
     faasr_set_workflow_timer_ow(faasr,cred,target, cron=NULL, unset=TRUE,...)
   }
+  # More to be developed
+  #} else if (type == "Microsoft Azure"){
+    #faasr_set_workflow_timer_az()
+  #} else if (type == "Google Cloud"){
+    #faasr_set_workflow_timer_gc()
+  #}
 }
 .faasr_user$operations$unset_workflow_timer <- faasr_unset_workflow_timer
 
