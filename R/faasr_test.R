@@ -364,7 +364,7 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
   result <- system(paste0("docker run -it -rm --name faasr-",current_func,
                     " --mount type=bind,source='${pwd}', target=/faasr_data spark77/test-docker:1.0.0.0-dev \"",
                     faasr_input, "\""), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
-                    
+  print(result)
   if (result[1] != "TRUE"){
     return(result[1])
   }
