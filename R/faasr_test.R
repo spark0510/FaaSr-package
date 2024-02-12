@@ -358,13 +358,11 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
   cli_alert_info(paste0("Using Docker: Start testing",current_func))
   
   faasr_input <- jsonlite::toJSON(faasr, auto_unbox=TRUE)
-  faasr_input <- toString(faasr_input)
-  faasr_input <- gsub("\"", "\\\\\\\"", faasr_input)
 
-  result <- system(paste0("docker run --rm --name faasr-",current_func,
-                    " --mount type=bind,source='${pwd}', target=/faasr_data spark77/test-docker:1.0.0.0-dev \"",
-                    faasr_input, "\""), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
-  print(result)
+  result <- system(paste0("docker run -rm --name faasr-",current_func,
+                    " --mount type=bind,source='${pwd}', target=/faasr_data spark77/test-docker:1.0.0.1-dev \'",
+                    faasr_input, "\'"), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
+                    
   if (result[1] != "TRUE"){
     return(result[1])
   }
@@ -387,4 +385,5 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
   }
   return(TRUE)
 }
+
 
