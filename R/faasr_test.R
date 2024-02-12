@@ -361,7 +361,7 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
   faasr_input <- toString(faasr_input)
   faasr_input <- gsub("\"", "\\\\\\\"", faasr_input)
 
-  result <- system(paste0("docker run -it -rm --name faasr-",current_func,
+  result <- system(paste0("docker run --rm --name faasr-",current_func,
                     " --mount type=bind,source='${pwd}', target=/faasr_data spark77/test-docker:1.0.0.0-dev \"",
                     faasr_input, "\""), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
   print(result)
