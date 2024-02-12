@@ -309,3 +309,82 @@ faasr_install_git_package <- function(ghpackages, lib_path=NULL){
 	  }
   }
 }
+
+
+faasr_test_docker <- function(){
+
+  svc <- .faasr_get_svc()
+  faasr_wd <- svc$wd
+  if (!dir.exists(faasr_wd)){
+    faasr_wd <- getwd()
+  }
+  faasr <- svc$json
+  cred <- faasr_collect_sys_env(faasr,svc$cred)
+  faasr <- faasr_replace_values(faasr, cred)
+
+  if (!dir.exists(faasr_data)){
+    cli_alert_danger("faasr_data directory no found")
+    return("")
+  }
+  
+  setwd("faasr_data")
+
+  if (dir.exists("temp")){
+    unlink("temp", recursive=TRUE)
+  }
+  dir.create("temp/faasr_state_info", recursive=TRUE)
+  
+  download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "temp/FaaSr.schema.json")
+
+  result <- faasr_test_start_docker(faasr, faasr_wd)
+
+  if (result == TRUE){
+    setwd(faasr_wd)
+    cli_alert_success("Function execution successfully")
+  } else {
+    setwd(faasr_wd)
+    cli_alert_danger(result)
+    cli_alert_info("Wrong result: test close")
+  }
+}
+.faasr_user$operations$faasr_test_docker <- faasr_test_docker
+
+
+
+faasr_test_start_docker <- function(faasr, faasr_wd){
+  
+  current_func <- faasr$FunctionInvoke
+
+  cli_alert_info(paste0("Using Docker: Start testing",current_func))
+  
+  faasr_input <- jsonlite::toJSON(faasr, auto_unbox=TRUE)
+  faasr_input <- toString(faasr_input)
+  faasr_input <- gsub("\"", "\\\\\\\"", faasr_input)
+
+  result <- system(paste0("docker run -it -rm --name faasr-",current_func,
+                    " --mount type=bind,source='${pwd}', target=/faasr_data spark77/test-docker:1.0.0.0-dev \"",
+                    faasr_input, "\""), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
+                    
+  if (result[1] != "TRUE"){
+    return(result[1])
+  }
+
+  next_funcs <- faasr$FunctionList[[faasr$FunctionInvoke]]$InvokeNext
+  if (is.null(next_funcs)){
+    setwd("..")
+    return(TRUE)
+  }
+  
+  cli_alert_info(paste0("Using Docker: Success testing",current_func))
+
+  for (next_func in next_funcs){
+    faasr$FunctionInvoke <- next_func
+    cli_alert_info("Trigger Next functions")
+    result <- faasr_test_start_docker(faasr, faasr_wd)
+    if (result != TRUE){
+      return(result)
+    }
+  }
+  return(TRUE)
+}
+
