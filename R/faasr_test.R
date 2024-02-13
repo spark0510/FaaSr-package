@@ -233,62 +233,63 @@ faasr_configuration_check <- function(faasr){
 
 faasr_mock_put_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
    
+  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
   put_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
   local_file <- sub("^/+", "", sub("/+$", "", local_file))
+  local_folder <- paste0(faasr_wd, "/", local_folder)
   put_file <- paste0(local_folder,"/",local_file)
   
-  remote_path <- paste0("../../files/", put_file_s3)
-  local_path <- put_file
-  
-  if (!dir.exists(paste0("./",local_folder))){
-    dir.create(paste0("./",local_folder), recursive=TRUE)
+  if (!dir.exists(local_folder)){
+    dir.create(local_folder, recursive=TRUE)
   }
 
-  if (!dir.exists(paste0("../../files/", remote_folder))){
-    dir.create(paste0("../../files/", remote_folder), recursive=TRUE)
+  if (!dir.exists(remote_folder)){
+    dir.create(remote_folder, recursive=TRUE)
   }  
 
-  file.copy(from=local_path, to=remote_path)
+  file.copy(from=put_file, to=put_file_s3)
 
 }
 
 faasr_mock_get_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
   
+  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
   get_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
   local_file <- sub("^/+", "", sub("/+$", "", local_file))
+  local_folder <- paste0(faasr_wd, "/", local_folder)
   get_file <- paste0(local_folder,"/",local_file)
   
-  remote_path <- paste0("../../files/", get_file_s3)
-  local_path <- get_file
-  
-  if (!dir.exists(paste0("./",local_folder))){
-    dir.create(paste0("./",local_folder), recursive=TRUE)
+  if (!dir.exists(local_folder)){
+    dir.create(local_folder, recursive=TRUE)
   }
 
-  if (!dir.exists(paste0("../../files/", remote_folder))){
-    dir.create(paste0("../../files/", remote_folder), recursive=TRUE)
+  if (!dir.exists(remote_folder)){
+    dir.create(remote_folder, recursive=TRUE)
   }  
 
-  file.copy(to=local_path, from=remote_path)
+  file.copy(to=get_file, from=get_file_s3)
 
 }
 
 faasr_mock_delete_file <- function(server_name=NULL, remote_folder="", remote_file){
   
+  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
   delete_file_s3 <- paste0(remote_folder, "/", remote_file)
 
-  remote_path <- paste0("../../files/", delete_file_s3)
-  unlink(remote_path, recursive=TRUE)
+  unlink(delete_file_s3, recursive=TRUE)
 
 }
 
