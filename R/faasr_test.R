@@ -210,7 +210,7 @@ faasr_user_function_check <- function(faasr, docker_use=FALSE){
 faasr_configuration_check <- function(faasr, docker_use=FALSE){
   
   if (docker_use){
-    file.copy(from="/faasr_data/FaaSr.schema.json", to="FaaSr.schema.json")
+    file.copy(from="/faasr_data/temp/FaaSr.schema.json", to="FaaSr.schema.json")
   } else {
     file.copy(from="../FaaSr.schema.json", to="FaaSr.schema.json")
   }
