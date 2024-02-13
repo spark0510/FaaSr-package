@@ -56,15 +56,14 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   # run the test - configuration/user_function tests
   if (docker_use){
     result <- system(paste0("docker run --rm --name faasr-",current_func,
-                    " --mount type=bind,source='",faasr_data_wd,"',target='",faasr_data_wd,"' ",
-                    docker_image," '", faasr_input, "' '",faasr_data_wd,"/temp'"), 
+                    " --mount type=bind,source='",faasr_data_wd,"',target='/faasr_data' ",
+                    docker_image," '", faasr_input,"'"), 
                     intern=TRUE, ignore.stderr = FALSE, ignore.stdout= FALSE)
   } else {
     result <- faasr_test_run(faasr)
   }
-  print(result)
-  if (result[1] != TRUE){
-    return(result[1])
+  if (result[length(result)] != TRUE){
+    return(result[length(result)])
   }
 
   # if there's no next function, return TRUE.
@@ -81,19 +80,25 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
     setwd("..")
     cli_alert_info("Trigger Next functions")
     result <- faasr_test_start(faasr, faasr_data_wd, docker_use, docker_image)
-    if (result[1] != TRUE){
-      return(result[1])
+    if (result[length(result)] != TRUE){
+      return(result[length(result)])
     }
   }
-
   return(TRUE)
 }
 
-faasr_test_run <- function(faasr){
+faasr_test_run <- function(faasr, docker_use=FALSE){
 
-  for (i in list.files("../R")){
-    source(paste0("../R/",i))
+  if (docker_use){
+    for (i in list.files("/faasr_data/R")){
+      source(paste0("/faasr_data/R/",i))
+    }
+  } else {
+    for (i in list.files("../R")){
+      source(paste0("../R/",i))
+    }
   }
+  
   cli_alert_success("Soured R files")
 
   current_func <- faasr$FunctionInvoke
@@ -103,7 +108,7 @@ faasr_test_run <- function(faasr){
   }
   setwd(current_func)
 
-  result <- faasr_configuration_check(faasr)
+  result <- faasr_configuration_check(faasr, docker_use)
   if (result != TRUE){
     if (result == "next"){
       return(TRUE)
@@ -121,7 +126,7 @@ faasr_test_run <- function(faasr){
   }
   cli_alert_success("Dependencies installed")
 
-  result <- faasr_user_function_check(faasr)
+  result <- faasr_user_function_check(faasr, docker_use)
   if (result != TRUE){
     cli_alert_danger(result)
     return("")
@@ -131,8 +136,9 @@ faasr_test_run <- function(faasr){
 }
 
 
-faasr_user_function_check <- function(faasr){
+faasr_user_function_check <- function(faasr, docker_use=FALSE){
 
+    faasr_wd <- getwd()
     func_name <- faasr$FunctionList[[faasr$FunctionInvoke]]$FunctionName
     user_function <- try(get(func_name), silent=TRUE)
 
@@ -141,25 +147,43 @@ faasr_user_function_check <- function(faasr){
     }
 
     user_call <- trimws(deparse(user_function))
-    for (i in 1:length(user_call)){
-      user_call[i] <- gsub("FaaSr::faasr_put_file", "faasr_mock_put_file", user_call[i])
-      user_call[i] <- gsub("faasr_put_file", "faasr_mock_put_file", user_call[i])
+    if (docker_use){
+      for (i in 1:length(user_call)){
+        user_call[i] <- gsub("FaaSr::faasr_put_file", "faasr_docker_mock_put_file", user_call[i])
+        user_call[i] <- gsub("faasr_put_file", "faasr_docker_mock_put_file", user_call[i])
 
-      user_call[i] <- gsub("FaaSr::faasr_get_file", "faasr_mock_get_file", user_call[i])
-      user_call[i] <- gsub("faasr_get_file", "faasr_mock_get_file", user_call[i])
+        user_call[i] <- gsub("FaaSr::faasr_get_file", "faasr_docker_mock_get_file", user_call[i])
+        user_call[i] <- gsub("faasr_get_file", "faasr_docker_mock_get_file", user_call[i])
 
-      user_call[i] <- gsub("FaaSr::faasr_delete_file", "faasr_mock_delete_file", user_call[i])
-      user_call[i] <- gsub("faasr_delete_file", "faasr_mock_delete_file", user_call[i])
+        user_call[i] <- gsub("FaaSr::faasr_delete_file", "faasr_docker_mock_delete_file", user_call[i])
+        user_call[i] <- gsub("faasr_delete_file", "faasr_docker_mock_delete_file", user_call[i])
 
-      user_call[i] <- gsub("FaaSr::faasr_log", "faasr_mock_log", user_call[i])
-      user_call[i] <- gsub("faasr_log", "faasr_mock_log", user_call[i])      
-    }   
+        user_call[i] <- gsub("FaaSr::faasr_log", "faasr_mock_log", user_call[i])
+        user_call[i] <- gsub("faasr_log", "faasr_mock_log", user_call[i])   
+      }
+    } else {
+      for (i in 1:length(user_call)){
+        user_call[i] <- gsub("FaaSr::faasr_put_file", "faasr_mock_put_file", user_call[i])
+        user_call[i] <- gsub("faasr_put_file", "faasr_mock_put_file", user_call[i])
+
+        user_call[i] <- gsub("FaaSr::faasr_get_file", "faasr_mock_get_file", user_call[i])
+        user_call[i] <- gsub("faasr_get_file", "faasr_mock_get_file", user_call[i])
+
+        user_call[i] <- gsub("FaaSr::faasr_delete_file", "faasr_mock_delete_file", user_call[i])
+        user_call[i] <- gsub("faasr_delete_file", "faasr_mock_delete_file", user_call[i])
+
+        user_call[i] <- gsub("FaaSr::faasr_log", "faasr_mock_log", user_call[i])
+        user_call[i] <- gsub("faasr_log", "faasr_mock_log", user_call[i])      
+      }   
+    }
     user_function <- eval(parse(text=user_call))
 
     user_args <- faasr_get_user_function_args(faasr) 
 
     faasr_result <- tryCatch({expr=do.call(user_function, user_args)}, error=function(e){e})
 
+    setwd(faasr_wd)
+    
     if (is(faasr_result, "error")){
       check <- FALSE
       err_code <- deparse(faasr_result$call)
@@ -174,14 +198,23 @@ faasr_user_function_check <- function(faasr){
         return(faasr_result$message)
       }
     } else {
-      write.table("TRUE", file=paste0("../faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
+      if (docker_use){
+        write.table("TRUE", file=paste0("faasr/temp/faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
+      } else {
+        write.table("TRUE", file=paste0("../faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
+      }
       return(TRUE)
     }
 }
 
-faasr_configuration_check <- function(faasr){
+faasr_configuration_check <- function(faasr, docker_use=FALSE){
   
-  file.copy(from="../FaaSr.schema.json", to="FaaSr.schema.json")
+  if (docker_use){
+    file.copy(from="/faasr_data/FaaSr.schema.json", to="FaaSr.schema.json")
+  } else {
+    file.copy(from="../FaaSr.schema.json", to="FaaSr.schema.json")
+  }
+  
   faasr <- try(faasr_parse(toJSON(faasr,auto_unbox=TRUE)), silent=TRUE)
   if (is(faasr, "try-error")){
     # schema errors
@@ -219,7 +252,11 @@ faasr_configuration_check <- function(faasr){
   if (length(pre)>1){
     for (func in pre) {
       func_done <- paste0(func,".done")
-      check_fn_done_list <- list.files("../faasr_state_info")
+      if (docker_use){
+        check_fn_done_list <- list.files("/faasr_data/temp/faasr_state_info")
+      } else {
+        check_fn_done_list <- list.files("../faasr_state_info")
+      }
       if (!func_done %in% check_fn_done_list){
         return("next")
       }
@@ -233,15 +270,14 @@ faasr_configuration_check <- function(faasr){
 
 faasr_mock_put_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
    
-  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
-  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
+  remote_folder <- paste0("../../files/", remote_folder)
   put_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
   local_file <- sub("^/+", "", sub("/+$", "", local_file))
-  local_folder <- paste0(faasr_wd, "/", local_folder)
+  local_folder <- paste0("./", local_folder)
   put_file <- paste0(local_folder,"/",local_file)
   
   if (!dir.exists(local_folder)){
@@ -258,15 +294,14 @@ faasr_mock_put_file <- function(server_name=NULL, remote_folder="", remote_file,
 
 faasr_mock_get_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
   
-  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
-  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
+  remote_folder <- paste0("../../files/", remote_folder)
   get_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
   local_file <- sub("^/+", "", sub("/+$", "", local_file))
-  local_folder <- paste0(faasr_wd, "/", local_folder)
+  local_folder <- paste0("./", local_folder)
   get_file <- paste0(local_folder,"/",local_file)
   
   if (!dir.exists(local_folder)){
@@ -283,10 +318,9 @@ faasr_mock_get_file <- function(server_name=NULL, remote_folder="", remote_file,
 
 faasr_mock_delete_file <- function(server_name=NULL, remote_folder="", remote_file){
   
-  fassr_wd <- getwd()
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
-  remote_folder <- paste0(faasr_wd, "/../../files/", remote_folder)
+  remote_folder <- paste0("../../files/", remote_folder)
   delete_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   unlink(delete_file_s3, recursive=TRUE)
@@ -296,6 +330,66 @@ faasr_mock_delete_file <- function(server_name=NULL, remote_folder="", remote_fi
 faasr_mock_log <- function(log_message){
   # TBD
 }
+
+faasr_docker_mock_put_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
+   
+  remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
+  remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0("/faasr_data/files/", remote_folder)
+  put_file_s3 <- paste0(remote_folder, "/", remote_file)
+
+  local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
+  local_file <- sub("^/+", "", sub("/+$", "", local_file))
+  local_folder <- paste0("./", local_folder)
+  put_file <- paste0(local_folder,"/",local_file)
+  
+  if (!dir.exists(local_folder)){
+    dir.create(local_folder, recursive=TRUE)
+  }
+
+  if (!dir.exists(remote_folder)){
+    dir.create(remote_folder, recursive=TRUE)
+  }  
+
+  file.copy(from=put_file, to=put_file_s3)
+
+}
+
+faasr_docker_mock_get_file <- function(server_name=NULL, remote_folder="", remote_file, local_folder=".", local_file){
+  
+  remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
+  remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0("faasr_data/files/", remote_folder)
+  get_file_s3 <- paste0(remote_folder, "/", remote_file)
+
+  local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
+  local_file <- sub("^/+", "", sub("/+$", "", local_file))
+  local_folder <- paste0("./", local_folder)
+  get_file <- paste0(local_folder,"/",local_file)
+  
+  if (!dir.exists(local_folder)){
+    dir.create(local_folder, recursive=TRUE)
+  }
+
+  if (!dir.exists(remote_folder)){
+    dir.create(remote_folder, recursive=TRUE)
+  }  
+
+  file.copy(to=get_file, from=get_file_s3)
+
+}
+
+faasr_docker_mock_delete_file <- function(server_name=NULL, remote_folder="", remote_file){
+  
+  remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
+  remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
+  remote_folder <- paste0("faasr_data/files/", remote_folder)
+  delete_file_s3 <- paste0(remote_folder, "/", remote_file)
+
+  unlink(delete_file_s3, recursive=TRUE)
+
+}
+
 
 faasr_dependency_install <- function(faasr, funcname, new_lib=NULL){
 
