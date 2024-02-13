@@ -58,7 +58,7 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
     result <- system(paste0("docker run --rm --name faasr-",current_func,
                     " --mount type=bind,source='",faasr_data_wd,"',target='",faasr_data_wd,"' ",
                     docker_image," '", faasr_input, "' '",faasr_data_wd,"/temp'"), 
-                    intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
+                    intern=TRUE, ignore.stderr = FALSE, ignore.stdout= FALSE)
   } else {
     result <- faasr_test_run(faasr)
   }
