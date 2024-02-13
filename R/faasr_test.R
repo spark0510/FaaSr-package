@@ -336,7 +336,7 @@ faasr_test_docker <- function(){
   
   download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "temp/FaaSr.schema.json")
 
-  result <- faasr_test_start_docker(faasr, faasr_wd)
+  result <- faasr_test_start_docker(faasr)
 
   if (result == TRUE){
     setwd(faasr_wd)
@@ -351,14 +351,14 @@ faasr_test_docker <- function(){
 
 
 
-faasr_test_start_docker <- function(faasr, faasr_wd){
+faasr_test_start_docker <- function(faasr){
   
   current_func <- faasr$FunctionInvoke
 
   cli_alert_info(paste0("Using Docker: Start testing",current_func))
   
   faasr_input <- jsonlite::toJSON(faasr, auto_unbox=TRUE)
-
+  faasr_wd <- getwd()
   result <- system(paste0("docker run --rm --name faasr-",current_func,
                     " --mount type=bind,source='",faasr_wd,"',target=/faasr_data spark77/test-docker:1.0.0.1-dev \'",
                     faasr_input, "\'"), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
@@ -369,7 +369,6 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
 
   next_funcs <- faasr$FunctionList[[faasr$FunctionInvoke]]$InvokeNext
   if (is.null(next_funcs)){
-    setwd("..")
     return(TRUE)
   }
   
@@ -378,7 +377,7 @@ faasr_test_start_docker <- function(faasr, faasr_wd){
   for (next_func in next_funcs){
     faasr$FunctionInvoke <- next_func
     cli_alert_info("Trigger Next functions")
-    result <- faasr_test_start_docker(faasr, faasr_wd)
+    result <- faasr_test_start_docker(faasr)
     if (result != TRUE){
       return(result)
     }
