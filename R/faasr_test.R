@@ -305,6 +305,7 @@ faasr_dependency_install <- function(faasr, funcname, new_lib=NULL){
   ghpackages <- faasr$FunctionGitHubPackage[[funcname]]
   faasr_install_git_package(ghpackages, lib_path=new_lib)
 
+  return(TRUE)
 }
 
 faasr_install_cran <- function(packages, lib_path=NULL){
