@@ -218,7 +218,7 @@ faasr_configuration_check <- function(faasr){
   
   if (length(pre)>1){
     for (func in pre) {
-      func_done <- paste0("../faasr_state_info/",func,".done")
+      func_done <- paste0(func,".done")
       check_fn_done_list <- list.files("../faasr_state_info")
       if (!func_done %in% check_fn_done_list){
         return("next")
