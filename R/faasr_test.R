@@ -419,6 +419,7 @@ faasr_install_git_package <- function(ghpackages, lib_path=NULL){
   } else{
     for (ghpackage in ghpackages){
 	    withr::with_libpaths(new=lib_path, devtools::install_github(ghpackage, force=TRUE))
+      print(paste0(ghpackage, "installed"))
 	  }
   }
 }
