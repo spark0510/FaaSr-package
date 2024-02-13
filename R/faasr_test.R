@@ -51,6 +51,7 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   # get configuration
   current_func <- faasr$FunctionInvoke
   cli::cli_h1("")
+  faasr_input <- jsonlite::toJSON(faasr, auto_unbox=TRUE)
 
   # run the test - configuration/user_function tests
   if (docker_use){
