@@ -1,4 +1,13 @@
-faasr_test <- function(use_docker=list(use=FALSE, version="latest", image="faasr/test-docker")){
+docker_default_version <- "latest"
+docker_default_image <- "faasr/test-docker"
+
+faasr_test <- function(use_docker=
+                        list(
+                          use=FALSE, 
+                          version=docker_default_version, 
+                          image=docker_default_image
+                        )
+                      ){
   # Get configurations
   svc <- .faasr_get_svc()
   faasr_wd <- svc$wd
