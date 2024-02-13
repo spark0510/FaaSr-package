@@ -102,6 +102,8 @@ faasr_test_run <- function(faasr, docker_use=FALSE){
   cli_alert_success("Read R files")
 
   current_func <- faasr$FunctionInvoke
+  func_name <- faasr$FunctionList[[faasr$FunctionInvoke]]$FunctionName
+
   cli::cli_h2(paste0("Start testing: ",current_func))
   if (!dir.exists(current_func)){
     dir.create(current_func)
@@ -119,7 +121,7 @@ faasr_test_run <- function(faasr, docker_use=FALSE){
   }
   cli_alert_success("Configuration checked")
 
-  check <- faasr_dependency_install(faasr, current_func)
+  check <- faasr_dependency_install(faasr, func_name)
   if (check != TRUE){
     cli_alert_danger(check)
     return("")
@@ -419,7 +421,6 @@ faasr_install_git_package <- function(ghpackages, lib_path=NULL){
   } else{
     for (ghpackage in ghpackages){
 	    withr::with_libpaths(new=lib_path, devtools::install_github(ghpackage, force=TRUE))
-      print(paste0(ghpackage, "installed"))
 	  }
   }
 }
