@@ -29,7 +29,7 @@ faasr_test <- function(use_docker=list(use=FALSE, version="latest", image="faasr
   download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "temp/FaaSr.schema.json")
   
   # start the test
-  setwd(temp)
+  setwd("temp")
   result <- faasr_test_start(faasr, faasr_data_wd, use_docker$use, docker_image)
 
   # if result==TRUE, it is successful. Else, failed with "result" data.
