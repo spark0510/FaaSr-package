@@ -200,7 +200,7 @@ faasr_user_function_check <- function(faasr, docker_use=FALSE){
       }
     } else {
       if (docker_use){
-        write.table("TRUE", file=paste0("faasr_data/temp/faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
+        write.table("TRUE", file=paste0("/faasr_data/temp/faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
       } else {
         write.table("TRUE", file=paste0("../faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
       }
@@ -360,7 +360,7 @@ faasr_docker_mock_get_file <- function(server_name=NULL, remote_folder="", remot
   
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
-  remote_folder <- paste0("faasr_data/files/", remote_folder)
+  remote_folder <- paste0("/faasr_data/files/", remote_folder)
   get_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   local_folder <- sub("^/+", "", sub("/+$", "", local_folder))
@@ -384,7 +384,7 @@ faasr_docker_mock_delete_file <- function(server_name=NULL, remote_folder="", re
   
   remote_folder <- sub("^/+", "", sub("/+$", "", remote_folder))
   remote_file <- sub("^/+", "", sub("/+$", "", remote_file))
-  remote_folder <- paste0("faasr_data/files/", remote_folder)
+  remote_folder <- paste0("/faasr_data/files/", remote_folder)
   delete_file_s3 <- paste0(remote_folder, "/", remote_file)
 
   unlink(delete_file_s3, recursive=TRUE)
