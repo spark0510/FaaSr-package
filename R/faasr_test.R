@@ -62,7 +62,7 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   } else {
     result <- faasr_test_run(faasr)
   }
-  if (result[1] != "TRUE"){
+  if (result[1] != TRUE){
     return(result[1])
   }
 
@@ -127,6 +127,7 @@ faasr_test_run <- function(faasr){
     return("")
   }
   cli_alert_success("User function checked")
+  return(TRUE)
 }
 
 
