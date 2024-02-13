@@ -62,6 +62,7 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   } else {
     result <- faasr_test_run(faasr)
   }
+  print(result)
   if (result[1] != TRUE){
     return(result[1])
   }
