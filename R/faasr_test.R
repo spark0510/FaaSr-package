@@ -62,7 +62,8 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   } else {
     result <- faasr_test_run(faasr)
   }
-  if (result[length(result)] != TRUE){
+  print(result)
+  if (result[length(result)] != TRUE && result[length(result)] != "TRUE" ){
     return(result[length(result)])
   }
 
@@ -199,7 +200,7 @@ faasr_user_function_check <- function(faasr, docker_use=FALSE){
       }
     } else {
       if (docker_use){
-        write.table("TRUE", file=paste0("faasr/temp/faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
+        write.table("TRUE", file=paste0("faasr_data/temp/faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
       } else {
         write.table("TRUE", file=paste0("../faasr_state_info/", faasr$FunctionInvoke, ".done"), row.names=F, col.names=F)
       }
