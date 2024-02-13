@@ -62,7 +62,6 @@ faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
   } else {
     result <- faasr_test_run(faasr)
   }
-  print(result)
   if (result[length(result)] != TRUE && result[length(result)] != "TRUE" ){
     return(result[length(result)])
   }
@@ -100,7 +99,7 @@ faasr_test_run <- function(faasr, docker_use=FALSE){
     }
   }
   
-  cli_alert_success("Soured R files")
+  cli_alert_success("Read R files")
 
   current_func <- faasr$FunctionInvoke
   cli::cli_h2(paste0("Start testing: ",current_func))
@@ -120,7 +119,7 @@ faasr_test_run <- function(faasr, docker_use=FALSE){
   }
   cli_alert_success("Configuration checked")
 
-  check <- try(faasr_dependency_install(faasr, current_func), silent=TRUE)
+  check <- faasr_dependency_install(faasr, current_func)
   if (check != TRUE){
     cli_alert_danger(check)
     return("")
