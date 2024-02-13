@@ -1,5 +1,5 @@
-faasr_test <- function(){
-
+faasr_test <- function(use_docker=list(use=FALSE, version="latest", image="faasr/test-docker")){
+  # Get configurations
   svc <- .faasr_get_svc()
   faasr_wd <- svc$wd
   if (!dir.exists(faasr_wd)){
@@ -8,72 +8,116 @@ faasr_test <- function(){
   faasr <- svc$json
   cred <- faasr_collect_sys_env(faasr,svc$cred)
   faasr <- faasr_replace_values(faasr, cred)
+  docker_image <- paste0(use_docker$image, ":", use_docker$version)
 
+  # if no "faasr_data" folder, no execution
   if (!dir.exists(faasr_data)){
     cli_alert_danger("faasr_data directory no found")
     return("")
   }
-  
   setwd("faasr_data")
+  faasr_data_wd <- getwd()
 
+  # if there's "temp" folder, remove it, and create new "temp" folder.
   if (dir.exists("temp")){
     unlink("temp", recursive=TRUE)
   }
   dir.create("temp/faasr_state_info", recursive=TRUE)
-  
   cli_alert_success("Create test temporary folders")
 
-  for (i in list.files("R")){
-    source(paste0("R/",i))
-  }
-
-  cli_alert_success("Soured R files")
-
-  setwd("temp")
+  # Download schema from github
+  download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "temp/FaaSr.schema.json")
   
-  download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "FaaSr.schema.json")
+  # start the test
+  setwd(temp)
+  result <- faasr_test_start(faasr, faasr_data_wd, use_docker$use, docker_image)
 
-  result <- faasr_test_start(faasr, faasr_wd)
-
+  # if result==TRUE, it is successful. Else, failed with "result" data.
   if (result == TRUE){
     setwd(faasr_wd)
     cli_alert_success("Function execution successfully")
   } else {
     setwd(faasr_wd)
+    cli_alert_danger(result)
     cli_alert_info("Wrong result: test close")
   }
 }
 .faasr_user$operations$faasr_test <- faasr_test
 
-faasr_test_start <- function(faasr, faasr_wd){
-  #clc <- function() cat(rep("\n", 30))
+faasr_test_start <- function(faasr, faasr_data_wd, docker_use, docker_image){
+  # function for clearing the console
+  clc <- function() cat(rep("\n", 30))
+
+  # get configuration
+  current_func <- faasr$FunctionInvoke
   cli::cli_h1("")
 
-  current_func <- faasr$FunctionInvoke
+  # run the test - configuration/user_function tests
+  if (docker_use){
+    result <- system(paste0("docker run --rm --name faasr-",current_func,
+                    " --mount type=bind,source='",faasr_data_wd,"',target='",faasr_data_wd,"' ",
+                    docker_image," \'", faasr_input, "\' ",faasr_data_wd,"/temp"), 
+                    intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
+  } else {
+    result <- faasr_test_run(faasr)
+  }
+  if (result[1] != "TRUE"){
+    return(result[1])
+  }
 
+  # if there's no next function, return TRUE.
+  next_funcs <- faasr$FunctionList[[faasr$FunctionInvoke]]$InvokeNext
+  if (is.null(next_funcs)){
+    return(TRUE)
+  }
+
+  cli_alert_info(paste0("Testing successful - ",current_func))
+
+  # recursively run the code by calling another "faasr_test_start"
+  for (next_func in next_funcs){
+    faasr$FunctionInvoke <- next_func
+    setwd("..")
+    cli_alert_info("Trigger Next functions")
+    result <- faasr_test_start(faasr, faasr_data_wd, docker_use, docker_image)
+    if (result[1] != TRUE){
+      return(result[1])
+    }
+  }
+
+  return(TRUE)
+}
+
+faasr_test_run <- function(faasr){
+
+  for (i in list.files("../R")){
+    source(paste0("../R/",i))
+  }
+  cli_alert_success("Soured R files")
+
+  current_func <- faasr$FunctionInvoke
   cli::cli_h2(paste0("Start testing: ",current_func))
   if (!dir.exists(current_func)){
     dir.create(current_func)
   }
-  
   setwd(current_func)
-
-  if (!dir.exists("logs")){
-    dir.create("logs")
-  }
 
   result <- faasr_configuration_check(faasr)
   if (result != TRUE){
     if (result == "next"){
+      cat(TRUE)
       return(TRUE)
     } else{
       cli_alert_danger(result)
-      return("")
+      return(result)
     }
   }
   cli_alert_success("Configuration checked")
 
   check <- try(faasr_dependency_install(faasr, current_func), silent=TRUE)
+  if (check != TRUE){
+    cli_alert_danger(check)
+    return("")
+  }
   cli_alert_success("Dependencies installed")
 
   result <- faasr_user_function_check(faasr)
@@ -82,29 +126,7 @@ faasr_test_start <- function(faasr, faasr_wd){
     return("")
   }
   cli_alert_success("User function checked")
-
-  next_funcs <- faasr$FunctionList[[faasr$FunctionInvoke]]$InvokeNext
-  if (is.null(next_funcs)){
-    setwd("..")
-    return(TRUE)
-  }
-
-  cat("\f")
-  cli_alert_info(paste0("Success testing",current_func))
-
-  for (next_func in next_funcs){
-    faasr$FunctionInvoke <- next_func
-    setwd("..")
-    cli_alert_info("Trigger Next functions")
-    result <- faasr_test_start(faasr, faasr_wd)
-    if (result == ""){
-      return("")
-    }
-  }
-
-  return(TRUE)
 }
-
 
 
 faasr_user_function_check <- function(faasr){
@@ -159,7 +181,7 @@ faasr_configuration_check <- function(faasr){
   
   file.copy(from="../FaaSr.schema.json", to="FaaSr.schema.json")
   faasr <- try(faasr_parse(toJSON(faasr,auto_unbox=TRUE)), silent=TRUE)
-  if (is(faasr, "error")){
+  if (is(faasr, "try-error")){
     # schema errors
     return(attr(faasr, "condition"))
   } 
@@ -269,14 +291,8 @@ faasr_mock_delete_file <- function(server_name=NULL, remote_folder="", remote_fi
 }
 
 faasr_mock_log <- function(log_message){
-  
-  logs <- log_message
-  log_file <- "logs/log.txt"
-  write.table(logs, log_file, col.names=FALSE, row.names = FALSE, append=TRUE, quote=FALSE)
-  
+  # TBD
 }
-
-#system2(stderr=TRUE, stdout=TRUE)
 
 faasr_dependency_install <- function(faasr, funcname, new_lib=NULL){
 
@@ -289,7 +305,6 @@ faasr_dependency_install <- function(faasr, funcname, new_lib=NULL){
   faasr_install_git_package(ghpackages, lib_path=new_lib)
 
 }
-
 
 faasr_install_cran <- function(packages, lib_path=NULL){
   if (length(packages)==0){
@@ -309,80 +324,3 @@ faasr_install_git_package <- function(ghpackages, lib_path=NULL){
 	  }
   }
 }
-
-
-faasr_test_docker <- function(){
-
-  svc <- .faasr_get_svc()
-  faasr_wd <- svc$wd
-  if (!dir.exists(faasr_wd)){
-    faasr_wd <- getwd()
-  }
-  faasr <- svc$json
-  cred <- faasr_collect_sys_env(faasr,svc$cred)
-  faasr <- faasr_replace_values(faasr, cred)
-
-  if (!dir.exists(faasr_data)){
-    cli_alert_danger("faasr_data directory no found")
-    return("")
-  }
-  
-  setwd("faasr_data")
-
-  if (dir.exists("temp")){
-    unlink("temp", recursive=TRUE)
-  }
-  dir.create("temp/faasr_state_info", recursive=TRUE)
-  
-  download.file("https://raw.githubusercontent.com/FaaSr/FaaSr-package/main/schema/FaaSr.schema.json", "temp/FaaSr.schema.json")
-
-  result <- faasr_test_start_docker(faasr)
-
-  if (result == TRUE){
-    setwd(faasr_wd)
-    cli_alert_success("Function execution successfully")
-  } else {
-    setwd(faasr_wd)
-    cli_alert_danger(result)
-    cli_alert_info("Wrong result: test close")
-  }
-}
-.faasr_user$operations$faasr_test_docker <- faasr_test_docker
-
-
-
-faasr_test_start_docker <- function(faasr){
-  
-  current_func <- faasr$FunctionInvoke
-
-  cli_alert_info(paste0("Using Docker: Start testing",current_func))
-  
-  faasr_input <- jsonlite::toJSON(faasr, auto_unbox=TRUE)
-  faasr_wd <- getwd()
-  result <- system(paste0("docker run --rm --name faasr-",current_func,
-                    " --mount type=bind,source='",faasr_wd,"',target=/faasr_data spark77/test-docker:1.0.0.1-dev \'",
-                    faasr_input, "\'"), intern=TRUE, ignore.stderr = TRUE, ignore.stdout= TRUE)
-                    
-  if (result[1] != "TRUE"){
-    return(result[1])
-  }
-
-  next_funcs <- faasr$FunctionList[[faasr$FunctionInvoke]]$InvokeNext
-  if (is.null(next_funcs)){
-    return(TRUE)
-  }
-  
-  cli_alert_info(paste0("Using Docker: Success testing",current_func))
-
-  for (next_func in next_funcs){
-    faasr$FunctionInvoke <- next_func
-    cli_alert_info("Trigger Next functions")
-    result <- faasr_test_start_docker(faasr)
-    if (result != TRUE){
-      return(result)
-    }
-  }
-  return(TRUE)
-}
-
-
