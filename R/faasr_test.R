@@ -105,7 +105,6 @@ faasr_test_run <- function(faasr){
   result <- faasr_configuration_check(faasr)
   if (result != TRUE){
     if (result == "next"){
-      cat(TRUE)
       return(TRUE)
     } else{
       cli_alert_danger(result)
