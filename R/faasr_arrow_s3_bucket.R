@@ -35,12 +35,19 @@ faasr_arrow_s3_bucket <- function(server_name=.faasr$DefaultDataStore, faasr_pre
     bucket <- target_s3$Bucket
   }
 
+  if (is.null(target_s3$Anonymous)){
+    faasr_anonymous <- as.logical(target_s3$Anonymous)
+  } else {
+    faasr_anonymous <- FALSE
+  }
+
   s3 <- arrow::s3_bucket(
     bucket = bucket,
     access_key = target_s3$AccessKey,
     secret_key = target_s3$SecretKey,
     endpoint_override = target_s3$Endpoint,
-    region= target_s3$Region
+    region = target_s3$Region,
+    anonymous = faasr_anonymous
   )
 
   return(s3)
