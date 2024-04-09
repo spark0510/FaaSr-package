@@ -15,7 +15,7 @@
 
 globalVariables(".faasr")
 
-faasr_arrow_s3_bucket <- function(server_name=.faasr$DefaultDataStore, faasr_prefix="", faasr_anonymous = FALSE) {
+faasr_arrow_s3_bucket <- function(server_name=.faasr$DefaultDataStore, faasr_prefix="") {
   # Check that an S3 server_name has been defined
   # If not, log an error and abort
 
@@ -34,6 +34,12 @@ faasr_arrow_s3_bucket <- function(server_name=.faasr$DefaultDataStore, faasr_pre
   } else {
     bucket <- target_s3$Bucket
   }
+
+  if (is.null(target_s3$Anonymous)){
+    faasr_anonymous <- FALSE
+  } else {
+    faasr_anonymous <- as.logical(target_s3$Anonymous) 
+  }  
 
   s3 <- arrow::s3_bucket(
     bucket = bucket,
