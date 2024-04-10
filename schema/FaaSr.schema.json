@@ -117,7 +117,8 @@
                   "SecretKey":{"type":"string","minLength": 1},
                   "Bucket":{"type":"string","minLength": 1},
                   "Region":{"type":"string"},
-                  "Writable":{"type":"string","minLength": 1}
+                  "Writable":{"type":"string","minLength": 1},
+                  "Anonymous":{"type":"string","minLength": 1}
                   },
             "required":["AccessKey", "SecretKey", "Bucket"],
             "additionalProperties": false
