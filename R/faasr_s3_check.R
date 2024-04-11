@@ -29,8 +29,10 @@ faasr_s3_check <- function(faasr){
     if (length(region_check)==0 || region_check==""){
       faasr$DataStores[[server]]$Region <- "us-east-1"
     }
-    if (!is.null(faasr$DataStores[[server]]$Anonymous) | as.logical(faasr$DataStores[[server]]$Anonymous) == TRUE){
-      next
+    if (!is.null(faasr$DataStores[[server]]$Anonymous)){
+      if (as.logical(faasr$DataStores[[server]]$Anonymous) == TRUE){
+        next
+      }
     }
     s3<-paws.storage::s3(
       config=list(
